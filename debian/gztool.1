@@ -1,0 +1,181 @@
+.\"                                      Hey, EMACS: -*- nroff -*-
+.\" (C) Copyright 2020 Stephen Kitt <skitt@debian.org>,
+.\"
+.\" First parameter, NAME, should be all caps
+.\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
+.\" other parameters are allowed: see man(7), man(1)
+.TH GZTOOL 1 "May 28 2020"
+.\" Please adjust this date whenever revising the manpage.
+.\"
+.\" Some roff macros, for reference:
+.\" .nh        disable hyphenation
+.\" .hy        enable hyphenation
+.\" .ad l      left justify
+.\" .ad b      justify to both left and right margins
+.\" .nf        disable filling
+.\" .fi        enable filling
+.\" .br        insert line break
+.\" .sp <n>    insert n+1 empty lines
+.\" for manpage-specific macros, see man(7)
+
+.SH NAME
+gztool \- gzip-compressed file indexer
+
+.SH SYNOPSIS
+.B gztool
+.RB [ \- [ abLnsv ]
+.RI < num >]
+.RB [ \-cCdDeEfFhilStTwWxX | u [ cCdD ]]
+.RB [ \-I
+.RI < index >]
+.RI < file "> ..."
+
+.SH DESCRIPTION
+.B gztool
+creates small indexes for files compressed with
+.BR gzip (1),
+enabling quick random access. It builds upon this to provide a number
+of features.
+
+.SH OPTIONS
+The following options are recognised:
+.TP
+.BR \-a " <\fIseconds\fP>"
+Await
+.I seconds
+between reads with
+.BR - [ ST ]| Ec .
+Defaults to 4 seconds.
+.TP
+.BR \-b " <\fIoffset\fP>"
+Extract data from
+.IR offset ,
+taken as an uncompressed byte offset in the file, to standard output.
+This creates or reuses index files as necessary. '0' and '0x'
+prefixes can be used, and 'kmgtpe' or 'KMGTPE' suffixes (powers of ten
+and of two respectively).
+.TP
+.B \-C
+Always create a complete index file, ignoring possible errors.
+.TP
+.B \-c
+Compress a file (equivalent to
+.BR "gzip \-c" ),
+creating an index at the same time.
+.TP
+.B \-d
+Decompress a file (equivalent to
+.BR "gzip \-d" ).
+.TP
+.B \-D
+Do not delete the original file when compressing or decompressing.
+.TP
+.B \-e
+If multiple files are specified, continue on error (if any).
+.TP
+.B \-E
+End processing on first
+.B gzip
+end-of-file marker at EOF. (Has no effect if combined with
+.BR \-e ).
+.TP
+.B \-f
+Force overwriting if the destination file already exists.
+.TP
+.B \-F
+Force index creation/completion before the requested action. The
+default is to interleave index creation.
+.TP
+.B \-h
+Print a brief help message.
+.TP
+.B \-hh
+Print a complete usage guide.
+.TP
+.B \-i
+Create an index for the given compressed file. This is the default
+action.
+.TP
+.BR \-I " <\fIindex\fP>"
+Use an index file named
+.IR index .
+.TP
+.B \-l
+Check and list the information contained in the given index file. Can
+be repeated
+.RB ( \-ll and \-lll )
+to increase the level of detail.
+.TP
+.BR \-L " <\fIline\fP>"
+Extract data from the given
+.IR line ,
+taken as a line number in the uncompressed data. This creates or
+reuses index files as necessary. '0' and '0x' prefixes can be used.
+.TP
+.BR \-n " <\fIoffset\fP>"
+Indicates that the first byte on compressed input is
+.IR offset ,
+not 1; this allows truncated compressed inputs to be used, as long as
+an index exists for the complete input.
+.TP
+.BR \-s " <\fIspan\fP>"
+Specifies the span in uncompressed mebibytes between index points when
+creating the index. Default is 10.
+.TP
+.B \-S
+Supervise the given file: create a growing index, for a still-growing
+compressed file
+.RB ( \-i
+is implicit).
+.TP
+.B \-t
+Extract the last bytes to standard out.
+.TP
+.B \-T
+Extract the last bytes to standard out, from a still-growing
+compressed file, and continue supervising and extracting to standard
+out.
+.TP
+.BR \-u " [" cCdD ]
+Utility to compress
+.RB ( "\-u c" )
+or decompress
+.RB ( "\-u d" )
+zlib-format files to standard output. Use the uppercase variants for
+raw compressed files. No index is used.
+.TP
+.BR \-v " <\fIverbosity\fP>"
+Set the output verbosity, from 0 (none) to 5 (nuts). Default is 1.
+.TP
+.B \-w
+Wait for file creation if it doesn't exist, when using
+.BR \- [ cdST ].
+.TP
+.B \-W
+Do not write the index to disk. If one is already available, it will
+be read and used. Useful if the index is still being created from a
+.B \-S
+run.
+.TP
+.B \-x
+Create an index with line number information (compatible with Unix and
+Windows line-endings). The index counts the last line even if it
+doesn't end with a newline.
+.TP
+.B \-X
+Like
+.BR \-x ,
+but the newline character is \\r (old Mac OS).
+
+.SH SEE ALSO
+.BR gzip (1).
+
+.SH AUTHORS
+.B gztool
+was written by Roberto S. Galende.
+
+This manual page was adapted from the provided documentation by
+Stephen Kitt <skitt@debian.org>, for the Debian GNU/Linux system (but
+may be used by others). It was last modified for
+.B gztool
+version 0.11.2.

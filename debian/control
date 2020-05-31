@@ -1,0 +1,25 @@
+Source: gztool
+Section: utils
+Priority: optional
+Maintainer: Stephen Kitt <skitt@debian.org>
+Build-Depends: debhelper-compat (= 13), zlib1g-dev
+Standards-Version: 4.5.0
+Homepage: https://github.com/circulosmeos/gztool
+Vcs-Browser: https://salsa.debian.org/debian/gztool
+Vcs-Git: https://salsa.debian.org/debian/gztool.git
+Rules-Requires-Root: no
+
+Package: gztool
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: gzip-compressed file indexer
+ gztool indexes gzip-compressed files, allowing them to be accessed
+ randomly (instead of from the beginning). It can index existing
+ files, which takes as much time as decompressing the file entirely;
+ it can also compress and decompress files itself, creating optimised
+ indexes as it goes.
+ .
+ Other features include:
+   - watch and index a gzip-compressed file as it is created;
+   - partially extract a gzip-compressed file;
+   - tail a gzip-compressed file (including follow mode).

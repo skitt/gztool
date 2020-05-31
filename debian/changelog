@@ -1,0 +1,5 @@
+gztool (0.11.2-1) unstable; urgency=medium
+
+  * Initial release. Closes: #961866.
+
+ -- Stephen Kitt <skitt@debian.org>  Thu, 28 May 2020 17:55:25 +0200

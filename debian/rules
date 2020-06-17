@@ -9,4 +9,4 @@ export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 	dh $@
 
 override_dh_auto_build:
-	make gztool LDLIBS="-lz -lm"
+	dh_auto_build --buildsystem=makefile -- gztool LDLIBS="-lz -lm"

@@ -1,4 +1,4 @@
-gztool v0.11.4
+gztool v0.11.5
 
 extract random positioned data from gzip files with no penalty,
 including gzip tailing like with 'tail -f' ! 

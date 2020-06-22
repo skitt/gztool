@@ -1,0 +1,22 @@
+Source: gztool
+Section: utils
+Priority: optional
+Maintainer: Roberto S. Galende <roberto.s.galende@gmail.com>
+Build-Depends: debhelper (>= 9), autotools-dev, zlib1g-dev
+Standards-Version: 4.1.2
+Homepage: https://github.com/circulosmeos/gztool
+#Vcs-Git: https://anonscm.debian.org/git/collab-maint/gztool.git
+#Vcs-Browser: https://anonscm.debian.org/cgit/collab-maint/gztool.git
+
+Package: gztool
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, zlib1g
+Description: extract random positioned data from gzip files
+ Extract random positioned data from gzip files with no penalty,
+ including gzip tailing like with 'tail -f'.
+ gztool creates an index file (.gzi) for every gzip it treates,
+ and this action is interleaved with compression/uncompression
+ so there's no waste of time. Any action can be interrupted at
+ any moment, and the remaining index will be reused on next runs.
+ Extraction is possible from any byte (or line, if index is 
+ created with `-x`) in the uncompressed data.

@@ -1,0 +1,13 @@
+gztool v0.11.4
+
+extract random positioned data from gzip files with no penalty,
+including gzip tailing like with 'tail -f' ! 
+
+By default gzip-compressed files cannot be accessed in random mode:
+any byte required at position N requires the complete gzip file
+to be decompressed from the beginning to the N byte.
+Nonetheless Mark Adler, the author of zlib, provided years ago a
+cryptic file named zran.c that creates an "index" of "windows"
+filled with 32 kiB of uncompressed data at different positions
+along the un/compressed file, which can be used to initialize the
+zlib library and make it behave as if compressed data begin there.

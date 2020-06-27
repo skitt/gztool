@@ -53,13 +53,15 @@ Also, some optimizations and brand new behaviours have been added:
 Installation
 ============
 
+* `gztool` is available using directly `apt-get install gztool` in [Debian unstable (actually)](https://packages.debian.org/source/unstable/gztool) and in [Ubuntu *Groovy Gorilla* (20.10) and above](https://launchpad.net/ubuntu/+source/gztool).
+
 * In Ubuntu, [using my repository](https://launchpad.net/~roberto.s.galende/+archive/ubuntu/gztool):
 
         sudo add-apt-repository ppa:roberto.s.galende/gztool
         sudo apt-get update
         sudo apt-get install gztool
 
-* See the [Release page](https://github.com/circulosmeos/gztool/releases) for executables for your platform. If none fit your needs, `gztool` is very easy to compile: see next sections.
+* See the [Release page](https://github.com/circulosmeos/gztool/releases) for executables for your platform, including **Windows**. If none fit your needs, `gztool` is very easy to compile: see next sections.
 
 Compilation
 ===========
@@ -88,7 +90,7 @@ Copy gztool.c to the directory where you compiled zlib, and do:
 Usage
 =====
 
-      gztool (v0.11.2)
+      gztool (v0.11.5)
       GZIP files indexer, compressor and data retriever.
       Create small indexes for gzipped files and use them
       for quick and random positioned data extraction.
@@ -255,6 +257,7 @@ Examples of use
             Guessed gzip file name:    'accounting.gz' (66.05%) ( 50172261 Bytes )
             Number of index points:    15
             Size of uncompressed file: 147773440 Bytes
+            Compression factor       : 66.05%
             List of points:
             @ compressed/uncompressed byte (index data size in Bytes @window's beginning at index file), ...
             #1: @ 10 / 0 ( 0 @56 ), #2: @ 3059779 / 10495261 ( 13127 @80 ), #3: @ 6418423 / 21210594 ( 6818 @13231 ), #4: @ 9534259 / 31720206 ( 7238 @20073 )...
@@ -313,7 +316,14 @@ Please note that not all stored numbers are 64-bit long. This is because some co
 
 With 64 bit long numbers, the index could potentially manage files up to 2^64 = 16 EiB (16 777 216 TiB).
 
-Regarding line number counting (`-[xX]`), note that gztool's index counts last line in uncompressed data even if the last char isn't a newline char - whilst `wc` command will not count it in this case!. Nonetheless, line counting when extracting data with `-[bLtT]` does follow `wc` convention - this is in order to not obtain different (+/-1) results reading `gztool` output info and `wc` counts.
+###Line number counting
+
+Regarding line number counting (`-[xX]`), note that gztool's index counts last line in uncompressed data even if the last char isn't a newline char - whilst `wc` command will not count it in this case!. Nonetheless, line counting when extracting data with `-[bLtT]` does follow `wc` convention - this is in order to not obtain different (+/-1) results reading `gztool` output info and `wc` counts.    
+
+Also note that line counting when a gzip file / index file aren't still complete, always starts in **1**. This is coherent with the previous statement, and it's also reasonable because if number counting is activated (`-[xX]`) there'll presumably be lines beautifully ending with a *new line* char (or chars in case of Windows: `CR+LF`) somewhere in the string.    
+
+magic file
+==========
 
 A *`magic`* file to correctly identify `gztool`'s index files with linux `file` command is provided: you can append it (or overwrite your empty) `/etc/magic` file or append/copy it to your home directory as `~/.magic` (note the point prepending the name).
 
@@ -358,7 +368,7 @@ Other interesting links
 Version
 =======
 
-This version is **v0.11.2**.
+This version is **v0.11.5**.
 
 Please, read the *Disclaimer*. This is still a beta release. In case of any errors, please open an [issue](https://github.com/circulosmeos/gztool/issues).
 

@@ -123,7 +123,7 @@
     #include <config.h>
 #else
     #define PACKAGE_NAME "gztool"
-    #define PACKAGE_VERSION "0.11.2"
+    #define PACKAGE_VERSION "0.11.5"
 #endif
 
 #include <stdint.h> // uint32_t, uint64_t, UINT32_MAX
@@ -1934,8 +1934,9 @@ local struct returned_output decompress_and_build_index(
         index->list = next;
         index->size = index->have;
         index->file_size = totout; /* size of uncompressed file (useful for bgzip files) */
-        if ( 0 == there_are_more_chars && totlines > 0 )
+        if ( 0 == there_are_more_chars && totlines > 1 ) {
             totlines --;
+        }
         index->number_of_lines = totlines; /* lines in uncompressed file */
     }
 
@@ -2013,8 +2014,9 @@ local struct returned_output decompress_and_build_index(
     if ( always_create_a_complete_index == 1 &&
          NULL != index ) {
         index->file_size = totout; /* size of uncompressed file (useful for bgzip files) */
-        if ( 0 == there_are_more_chars && totlines > 0 )
+        if ( 0 == there_are_more_chars && totlines > 1 ) {
             totlines --;
+        }
         index->number_of_lines = totlines; /* lines in uncompressed file */
         // return index pointer and write index to index file, ignoring the decompression error
         *built = index;
@@ -2738,8 +2740,9 @@ local struct returned_output compress_and_build_index(
         index->list = next;
         index->size = index->have;
         index->file_size = totin; /* size of uncompressed file */
-        if ( 0 == there_are_more_chars && totlines > 0)
+        if ( 0 == there_are_more_chars && totlines > 1 ) {
             totlines --;
+        }
         index->number_of_lines = totlines; /* lines in uncompressed file */
     }
 
@@ -2821,8 +2824,9 @@ local struct returned_output compress_and_build_index(
     if ( always_create_a_complete_index == 1 ) {
         if ( NULL != index ) {
             index->file_size = totin; /* size of uncompressed file */
-            if ( 0 == there_are_more_chars && totlines > 0 )
+            if ( 0 == there_are_more_chars && totlines > 1 ) {
                 totlines --;
+            }
             index->number_of_lines = totlines; /* lines in uncompressed file */
             // return index pointer and write index to index file, ignoring the compression error
             *built = index;
@@ -3067,9 +3071,9 @@ action_create_index_wait_for_file_creation:
 
         if ( indx_n_extraction_opts == DECOMPRESS ) {
             // file must have ".gz" extension so it can be decompressed
-            if ( (char *)strstr(file_name, ".gz") ==
-                 (char *)(file_name + strlen(file_name) - 3) &&
-                 strlen( file_name ) > 3
+            if ( strlen( file_name ) > 3 && // avoid out-of-bounds
+                 (char *)strstr(file_name, ".gz") ==
+                 (char *)(file_name + strlen(file_name) - 3)
                 ) {
                 // if gzip-file name is 'FILE.gz', output file name will be 'FILE'
                 char *output_filename = malloc( strlen(file_name) );
@@ -3229,7 +3233,7 @@ local int action_list_info( char *file_name, char *input_gzip_filename, enum VER
          strlen( file_name ) > 0 ) {
         stat( file_name, &st );
         if ( verbosity_level > VERBOSITY_NONE )
-            fprintf( stdout, "\tSize of index file (v%d):   %s (%llu Bytes)",
+            fprintf( stdout, "\tSize of index file (v%d)  : %s (%llu Bytes)",
                 index->index_version, giveMeSIUnits(st.st_size, 1), (long long unsigned)st.st_size );
 
         if ( st.st_size > 0 &&
@@ -3241,7 +3245,8 @@ local int action_list_info( char *file_name, char *input_gzip_filename, enum VER
                 gzip_filename = malloc( strlen(file_name) + 1 );
                 if ( NULL != gzip_filename ) {
                     sprintf( gzip_filename, "%s", file_name );
-                    if ( (char *)strstr(gzip_filename, ".gzi") ==
+                    if ( strlen( file_name ) > 4 && // avoid out-of-bounds
+                         (char *)strstr(gzip_filename, ".gzi") ==
                             (char *)(gzip_filename + strlen(file_name) - 4) ) {
                         // if index file name is 'FILE.gzi', gzip-file name should be 'FILE.gz'
                         gzip_filename[strlen(gzip_filename)-1]='\0';
@@ -3276,10 +3281,13 @@ local int action_list_info( char *file_name, char *input_gzip_filename, enum VER
                     if ( st_gzip.st_size > 0 &&
                          verbosity_level > VERBOSITY_NONE) {
                         fprintf( stdout, " (%.2f%%/gzip)\n", (double)st.st_size / (double)st_gzip.st_size * 100.0 );
-                        fprintf( stdout, "\tGuessed gzip file name:    '%s'", gzip_filename );
-                        if ( index->file_size > 0 )
-                            fprintf( stdout, " (%.2f%%)", 100.0 - (double)st_gzip.st_size / (double)index->file_size * 100.0 );
-                        fprintf( stdout, " %s (%llu Bytes)", giveMeSIUnits(st_gzip.st_size, 1), (long long unsigned)st_gzip.st_size );
+                        fprintf( stdout, "\tGuessed gzip file name   : '%s'", gzip_filename );
+                        if ( index->file_size > 0 ) {
+                            fprintf( stdout, " (%.2f%%)",
+                                100.0 - (double)st_gzip.st_size / (double)index->file_size * 100.0 );
+                        }
+                        fprintf( stdout, " %s (%llu Bytes)",
+                            giveMeSIUnits(st_gzip.st_size, 1), (long long unsigned)st_gzip.st_size );
                     }
                 } else {
                     if ( verbosity_level > VERBOSITY_NONE )
@@ -3307,14 +3315,16 @@ local int action_list_info( char *file_name, char *input_gzip_filename, enum VER
     } else {
 
         if ( verbosity_level > VERBOSITY_NONE ) {
-            fprintf( stdout, "\tNumber of index points:    %llu", (long long unsigned)index->have );
+            fprintf( stdout, "\tNumber of index points   : %llu", (long long unsigned)index->have );
             if ( index->have > 1000 ) {
                 fprintf( stdout, " (%s)\n", giveMeSIUnits(index->have, 0) );
             } else {
                 fprintf( stdout, "\n" );
             }
         }
+
         if ( verbosity_level > VERBOSITY_NONE ) {
+
             // print uncompressed file size
             if ( index->file_size != 0 ) {
                 fprintf( stdout, "\tSize of uncompressed file: %s (%llu Bytes)\n",
@@ -3322,45 +3332,80 @@ local int action_list_info( char *file_name, char *input_gzip_filename, enum VER
             } else {
                 if ( index->have > 1 ) {
                     fprintf( stdout, "\tSize of uncompressed file > %s (%llu Bytes)\n",
-                        giveMeSIUnits(index->list[index->have -1].out, 1), (long long unsigned)index->list[index->have -1].out );
+                        giveMeSIUnits(index->list[index->have -1].out, 1),
+                        (long long unsigned)index->list[index->have -1].out );
                 }
             }
+
             // print number of lines in uncompressed data
             if ( 1 == index->index_version ) {
                 uint64_t local_number_of_lines = 0;
+                fprintf( stdout, "\tNumber of lines          " );
                 if ( 1 == index->index_complete ) {
                     local_number_of_lines = index->number_of_lines;
-                    fprintf( stdout, "\tNumber of lines          :" );
+                    fprintf( stdout, ":" );
                 } else {
                     if ( index->have > 1 ) {
                         local_number_of_lines = index->list[index->have -1].line_number;
-                        fprintf( stdout, "\tNumber of lines           >" );
                     }
+                    fprintf( stdout, ">" );
                 }
-                if ( local_number_of_lines > 0 ) {
-                    fprintf( stdout, " %llu", (long long unsigned)local_number_of_lines );
-                    if ( local_number_of_lines > 1000 ) {
-                        fprintf( stdout, " (%s)", giveMeSIUnits(local_number_of_lines, 0) );
-                    }
+                fprintf( stdout, " %llu", (long long unsigned)local_number_of_lines );
+                if ( local_number_of_lines > 1000 ) {
+                    fprintf( stdout, " (%s)", giveMeSIUnits(local_number_of_lines, 0) );
                 }
                 fprintf( stdout, "\n" );
             }
+
+            // print compression factor, estimated from available data if index isn't complete
+            fprintf( stdout, "\tCompression factor       : " );
+            if ( 1 == index->index_complete &&
+                 NULL != gzip_filename  // gzip file may be unkown: compression cannot be calculated here
+                ) {
+                // index is complete
+                if ( st_gzip.st_size > 0 &&
+                     index->file_size > 0 ) {
+                    fprintf( stdout, "%.2f%%\n",
+                        100.0 - (double)st_gzip.st_size/(double)index->file_size*100.0 );
+                }
+            } else {
+                // index is incomplete (or gzip file is not available):
+                // use last available index point as data for percentage
+                if ( index->have > 1 && // index has at least one useful index point
+                     index->list[index->have -1].in  > 0 &&
+                     index->list[index->have -1].out > 0 ) {
+                    fprintf( stdout, "%.2f%%\n",
+                        100.0 - (double)index->list[index->have -1].in/(double)index->list[index->have -1].out*100.0 );
+                } else {
+                    fprintf( stdout, "Not available\n");
+                }
+            }
+
         }
+
+        // print and check index points stored in index
         if ( list_verbosity > VERBOSITY_NORMAL ) {
             if ( verbosity_level > VERBOSITY_NONE ) {
                 if ( list_verbosity < VERBOSITY_MANIAC ) {
-                    if ( 0 == index->index_version )
-                        fprintf( stdout, "\tList of points:\n\t#: @ compressed/uncompressed byte (window data size in Bytes @window's beginning at index file), ...\n" );
-                    else
-                        fprintf( stdout, "\tList of points:\n\t#: @ compressed/uncompressed byte L#line_number (window data size in Bytes @window's beginning at index file), ...\n" );
+                    if ( 0 == index->index_version ) {
+                        fprintf( stdout,
+                          "\tList of points:\n\t#: @ compressed/uncompressed byte (window data size in Bytes @window's beginning at index file), ...\n" );
+                    } else {
+                        fprintf( stdout,
+                          "\tList of points:\n\t#: @ compressed/uncompressed byte L#line_number (window data size in Bytes @window's beginning at index file), ...\n" );
+                    }
                 } else {
-                    if ( 0 == index->index_version )
-                        fprintf( stdout, "\tList of points:\n\t#: @ compressed/uncompressed byte (compressed window size / uncompressed window size), ...\n" );
-                    else
-                        fprintf( stdout, "\tList of points:\n\t#: @ compressed/uncompressed byte L#line_number (compressed window size / uncompressed window size), ...\n" );
+                    if ( 0 == index->index_version ) {
+                        fprintf( stdout,
+                          "\tList of points:\n\t#: @ compressed/uncompressed byte (compressed window size / uncompressed window size), ...\n" );
+                    } else {
+                        fprintf( stdout,
+                          "\tList of points:\n\t#: @ compressed/uncompressed byte L#line_number (compressed window size / uncompressed window size), ...\n" );
+                    }
                 }
-                if ( list_verbosity == VERBOSITY_MANIAC )
+                if ( list_verbosity == VERBOSITY_MANIAC ) {
                     fprintf( stdout, "\tChecking compressed windows...\n" );
+                }
             }
             for ( j=0; j<index->have; j++ ) {
                 if ( list_verbosity == VERBOSITY_EXCESSIVE &&
@@ -3381,7 +3426,8 @@ local int action_list_info( char *file_name, char *input_gzip_filename, enum VER
                         unsigned char *decompressed_window = NULL;
                         decompressed_window = decompress_chunk(index->list[j].window, &local_window_size);
                         if ( NULL == decompressed_window ) {
-                            printToStderr( VERBOSITY_NORMAL, "\nERROR: Could not decompress window #%llu from index file '%s'.\n",
+                            printToStderr( VERBOSITY_NORMAL,
+                                "\nERROR: Could not decompress window #%llu from index file '%s'.\n",
                                 j +1, file_name);
                             ret_value = EXIT_GENERIC_ERROR;
                         }
@@ -3392,11 +3438,14 @@ local int action_list_info( char *file_name, char *input_gzip_filename, enum VER
                         comp_win_counter   += index->list[j].window_size;
                         uncomp_win_counter += local_window_size;
                         fprintf( stdout, "#%llu: @ %llu / %llu ",
-                            (long long unsigned)(j +1), (long long unsigned)index->list[j].in, (long long unsigned)index->list[j].out );
-                        if ( 1 == index->index_version ) // print line number information
+                            (long long unsigned)(j +1),
+                            (long long unsigned)index->list[j].in, (long long unsigned)index->list[j].out );
+                        if ( 1 == index->index_version ) { // print line number information
                             fprintf( stdout, "L%llu ", (long long unsigned)index->list[j].line_number );
-                        fprintf( stdout, "( %d/%ld %.2f%% ), ", index->list[j].window_size,
-                            local_window_size, ((local_window_size>0)?(100.0 - (double)(index->list[j].window_size) / (double)local_window_size * 100.0):0.0) );
+                        }
+                        fprintf( stdout, "( %d/%llu %.2f%% ), ", index->list[j].window_size,
+                            (long long unsigned)local_window_size,
+                            ((local_window_size>0)?(100.0 - (double)(index->list[j].window_size) / (double)local_window_size * 100.0):0.0) );
                         if ( (j + 1) % 5 == 0 ) {
                             fprintf( stdout, "\n" );
                         }
@@ -3410,11 +3459,13 @@ local int action_list_info( char *file_name, char *input_gzip_filename, enum VER
         if ( verbosity_level > VERBOSITY_NONE &&
              list_verbosity == VERBOSITY_MANIAC &&
              uncomp_win_counter > 0 ) {
-            fprintf( stdout, "\n\tEstimated gzip data compression factor: %.2f%%", 100.0 - (double)comp_win_counter/(double)uncomp_win_counter*100.0 );
+            fprintf( stdout, "\n\tEstimated gzip data compression factor: %.2f%%",
+                100.0 - (double)comp_win_counter/(double)uncomp_win_counter*100.0 );
             if ( NULL != gzip_filename &&
                  st_gzip.st_size > 0 &&
                  index->file_size > 0 ) {
-                fprintf( stdout, "\n\tReal gzip data compression factor     : %.2f%%", 100.0 - (double)st_gzip.st_size/(double)index->file_size*100.0 );
+                fprintf( stdout, "\n\tReal gzip data compression factor     : %.2f%%",
+                    100.0 - (double)st_gzip.st_size/(double)index->file_size*100.0 );
             }
         }
 
@@ -3802,6 +3853,7 @@ int main(int argc, char **argv)
                 if ( ( optarg[0] != '0' && verbosity_level == 0 ) ||
                      strlen( optarg ) > 1 ||
                      verbosity_level > VERBOSITY_NUTS ) {
+                    verbosity_level = VERBOSITY_NORMAL; // without this an erroneous `-v` may not be shown
                     printToStderr( VERBOSITY_NORMAL, "ERROR: Invalid option `-v %s` (`-v [0..5]`).\n", optarg );
                     return EXIT_INVALID_OPTION;
                 }
@@ -4307,7 +4359,8 @@ int main(int argc, char **argv)
                 if ( action == ACT_COMPRESS_AND_CREATE_INDEX ) {
                     sprintf(index_filename, "%s.gzi", argv[i]);
                 } else {
-                    if ( (char *)strstr(index_filename, ".gz") ==
+                    if ( strlen( argv[i] ) > 3 && // avoid out-of-bounds
+                         (char *)strstr(index_filename, ".gz") ==
                          (char *)(index_filename + strlen(argv[i]) - 3)
                         )
                         // if gzip-file name is 'FILE.gz', index file name will be 'FILE.gzi'
@@ -4463,7 +4516,38 @@ int main(int argc, char **argv)
                         // then the actual parameter is the gzip filename
                         ret_value = action_list_info( index_filename, file_name, list_verbosity );
                     } else {
-                        ret_value = action_list_info( file_name, NULL, list_verbosity );
+                        // if indicated file_name is not an index, but an index exists corresponding
+                        // to it, use it for ease of use,
+                        // BUT only if passed file exists, to avoid adding a spurious extension to
+                        // imaginary FILE, obtaining FILE.gzi, the index for existent FILE.gz (!).
+                        if ( access( file_name, F_OK ) != -1 &&
+                            ( ( strlen( file_name ) > 4 && // avoid out-of-bounds
+                                (char *)strstr(file_name, ".gzi") !=
+                                (char *)(file_name + strlen(argv[i]) - 4) )
+                             ||
+                            strlen( file_name ) <= 4 )
+                        ) {
+                            printToStderr( VERBOSITY_EXCESSIVE,
+                                "Provided file '%s' has not '.gzi' extension ...\n", file_name );
+                            // file_name is not named "*.gzi"
+                            // so let's see if there's a filename with the corresponding index name:
+                            // fortunately, this index name has already been calculated: index_filename
+                            if ( access( index_filename, F_OK ) != -1 ) {
+                                // index_filename exists, so let's use it:
+                                printToStderr( VERBOSITY_EXCESSIVE,
+                                    "Detected '%s': using it as index file ...\n", index_filename );
+                                ret_value = action_list_info( index_filename, file_name, list_verbosity );
+                            } else {
+                                // provided file_name must be used, as there's no '.gzi' companion
+                                printToStderr( VERBOSITY_EXCESSIVE,
+                                    "Not detected '%s' file ...\n", file_name );
+                                ret_value = action_list_info( file_name, NULL, list_verbosity );
+                            }
+                        } else {
+                            // this is the default case: the passed parameter file_name
+                            // is the supossed index filename
+                            ret_value = action_list_info( file_name, NULL, list_verbosity );
+                        }
                     }
                     break;
 
@@ -4526,9 +4610,9 @@ int main(int argc, char **argv)
                         expected_first_byte );
                     if ( ret_value == EXIT_OK ) {
                         // delete original file, as with gzip
-                        if ( (char *)strstr(file_name, ".gz") ==
-                             (char *)(file_name + strlen(file_name) - 3) &&
-                             strlen( file_name ) > 3
+                        if ( strlen( file_name ) > 3 && // avoid out-of-bounds
+                             (char *)strstr(file_name, ".gz") ==
+                             (char *)(file_name + strlen(file_name) - 3)
                             ) {
                             // if gzip-file name is 'FILE.gz', output file has been 'FILE'
                             char *output_filename = malloc( strlen(file_name) );
